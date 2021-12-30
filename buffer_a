@@ -1,0 +1,129 @@
+//Cell management
+
+vec2 hash(float n) { 
+    return fract(sin(vec2(n,n*7.))* 43758.5453); 
+}
+
+vec4 Fish(float i) { 
+    return texelFetch(iChannel0, ivec2(i,0),0);
+}
+
+float sense(vec2 pos, float size){
+    float total = 0.;
+    for(float x = -size/2.; x <= size/2.; x++){
+        for(float y = -size/2.; y <= size/2.; y++) {
+            vec2 sense_loc = pos + vec2(x , y);
+            total += length(texelFetch(iChannel1, ivec2(sense_loc),0));
+        }
+    }
+    return total;
+}
+
+vec4 changeDirection(vec4 fish) {
+    float sense_angle = radians(SENSE_ANGLE);
+    float dist = SENSE_DIST;
+    float size = SENSE_SIZE;
+    
+    float angle = atan(fish.w, fish.z);
+    float new_angle = 0.;
+    
+    float sense_angle1 = angle + sense_angle;
+    vec2 sense_pixel1 = fish.xy + vec2(cos(sense_angle1)*dist,sin(sense_angle1)*dist);
+    float sense_value1 = sense(sense_pixel1,size);
+    
+    float sense_angle2 = angle;
+    vec2 sense_pixel2 = fish.xy + vec2(cos(sense_angle2)*dist,sin(sense_angle2)*dist);
+    float sense_value2 = sense(sense_pixel2,size);
+    
+    float sense_angle3 = angle - sense_angle;
+    vec2 sense_pixel3 = fish.xy + vec2(cos(sense_angle3)*dist,sin(sense_angle3)*dist);
+    float sense_value3 = sense(sense_pixel3,size);
+    
+    float explore = fract(sin(dot(fish.zw, fish.xy)) * 43758.43758);
+    if(explore < EXPLORE){
+        float rand = fract(sin(dot(fish.zw, fish.xy)) * 5453.5453);
+        if(rand > 0.5) 
+            new_angle = sense_angle1;
+        else
+            new_angle = sense_angle3;
+    } 
+    else if(sense_value1 > sense_value2 && sense_value1 > sense_value3) {
+        new_angle = sense_angle1;
+    } 
+    
+    //else if(sense_value2 > sense_value1 && sense_value2 > sense_value3){
+    //    new_angle = sense_angle2  ;   
+    //}
+    
+    else if(sense_value3 > sense_value2 && sense_value3 > sense_value1) {
+        new_angle = sense_angle3 ;    
+    }
+    
+    else {
+        float rand = fract(sin(dot(fish.zw, fish.xy)) * 43758.5453);
+        if(rand > 0.5) 
+            new_angle = sense_angle1;
+        else
+            new_angle = sense_angle3;
+    }
+
+    fish.zw = vec2(cos(new_angle)*SPEED, sin(new_angle)*SPEED);
+    return fish;
+    
+}
+
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    
+    //vec2 screensize = iResolution.xy;
+    vec2 screensize = vec2(SCREEN_X,SCREEN_Y);
+    float speed = 2.;
+    
+    float id = floor(fragCoord.x);
+    
+    //(xy = position, zw = velocity)
+    vec4 col = vec4(0);
+    
+    if(iFrame < 10){
+        float speed = 2.;
+        
+        vec2 random_pos = hash(id)*screensize;
+        float angle = radians(hash(id).x*hash(id).y*360.);
+        vec2 random_direction = vec2(cos(angle)*speed,sin(angle)*speed);
+        fragColor = vec4(random_pos,random_direction);
+    }
+    else {
+        //col = vec4(uv.x,.0,.0,.1);
+        //vec4 fish1 = Fish(0)
+        vec4 fish = Fish(id);
+        fish = changeDirection(fish);
+
+        
+        fish.xy += fish.zw;
+        
+        //Edge detection
+        if(fish.x < 0.){
+            fish.x = 0.;
+            fish.z *= -1.;
+        }
+        if(fish.y < 0.){
+            fish.y = 0.;
+            fish.w *= -1.;
+        }
+        if(fish.x > screensize.x){
+            fish.x = screensize.x;
+            fish.z *= -1.;
+        }
+        if(fish.y > screensize.y){
+            fish.y = screensize.y;
+            fish.w *= -1.;
+        }
+            
+            
+        
+        fragColor = fish;
+        
+    }
+    
+}

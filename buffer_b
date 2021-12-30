@@ -1,0 +1,58 @@
+//Scent
+vec4 Fish(float i) { 
+    return texelFetch(iChannel0, ivec2(i,0),0);
+}
+
+float drawScent(vec2 uv, vec2 coord) {
+    float d = length(vec2(uv.x - coord.x, uv.y - coord.y));
+    //return .03/d;
+    return .3/d < .2 ? 0. : SCENT_INTENSITY;
+}
+
+float removeScent(vec2 uv, vec2 coord) {
+    float d = length(vec2(uv.x - coord.x, uv.y - coord.y));
+    //return .03/d;
+    return .3/d < .5 ? 0. : SCENT_INTENSITY;
+}
+
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    
+    //(xy = position, zw = velocity)
+    vec2 screensize = vec2(SCREEN_X,SCREEN_Y);
+    vec2 uv = fragCoord/iResolution.xy;
+    uv.x *= iResolution.x/iResolution.y;
+    vec4 col = vec4(0.);
+    
+    // = Initialization ===================================
+    if(iFrame > 10){
+        
+        //col = texture(iChannel1, fragCoord);
+        //col = texelFetch(iChannel1, ivec2(fragCoord),0)*0.995;
+        //col = texelFetch(iChannel1, ivec2(fragCoord),0);
+        
+
+        float blur = SCENT_DESPERSION;
+
+        for(int i = -1;i<2;i++)
+            for(int j = -1;j<2;j++)
+                col += texture(iChannel1,vec2(fragCoord/iResolution.xy)+vec2(i,j)/iChannelResolution[1].xy*blur*1.,blur);
+        col/=9.05;
+        
+        col-=SCENT_DECAY;
+        
+        
+        for(float i = 0.; i <= NB; i++){
+            vec4 fish1 = Fish(i);
+            col += drawScent(fragCoord, fish1.xy);
+        }
+        
+    }
+    
+    fragColor = min(col,1.);
+    
+    //fragColor = .3/length(vec2(fragCoord-iMouse.xy)) > 0.01 ? vec4(0.) : col ;  
+    
+    
+}

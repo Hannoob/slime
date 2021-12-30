@@ -1,0 +1,16 @@
+#define NB      5000.
+
+#define SENSE_ANGLE      10.
+#define SENSE_DIST      14.
+#define SENSE_SIZE      3.
+
+#define SPEED 2.5
+
+#define SCENT_INTENSITY      .99
+#define SCENT_DECAY      .001
+#define SCENT_DESPERSION  .1
+
+#define SCREEN_X      250.
+#define SCREEN_Y      250.
+
+#define EXPLORE 0.01

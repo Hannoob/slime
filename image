@@ -1,0 +1,31 @@
+vec4 Fish(float i) { 
+    return texelFetch(iChannel0, ivec2(i,0),0);
+}
+
+
+float drawFish(vec2 uv, vec2 coord) {
+    float d = length(vec2(uv.x - coord.x, uv.y - coord.y));
+    return .3/d < .5 ? 0. : 1.;
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    
+    vec2 screensize = vec2(SCREEN_X,SCREEN_Y);
+    vec2 uv = fragCoord*(iResolution.xy/screensize);
+    uv.x *= iResolution.x/iResolution.y;
+    
+    uv = fragCoord;
+    
+    vec4 col = vec4(0);
+    
+    for(float i = 0.; i <= NB; i++){
+        vec4 fish1 = Fish(i);
+        col += drawFish(uv, vec2(fish1.x, fish1.y));
+    }
+    
+
+    col += texelFetch(iChannel1, ivec2(uv),0);
+    // Output to screen
+    fragColor = col;
+}
